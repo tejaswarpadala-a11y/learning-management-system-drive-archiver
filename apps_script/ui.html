@@ -1,1 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, button, select { margin: 6px 0; width: 100%; padding: 8px; }
+    .course-list { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+  </style>
+</head>
+<body>
 
+<h2>LMS Drive Archiver</h2>
+
+<label>Canvas Base URL</label>
+<input id="baseUrl" placeholder="https://your-school.instructure.com">
+
+<label>Canvas API Token</label>
+<input id="token" type="password">
+
+<label>Drive Folder Name</label>
+<input id="folderName" value="Coursework_All_Courses">
+
+<button onclick="fetchCourses()">Fetch Courses</button>
+
+<div id="courses" class="course-list"></div>
+
+<button onclick="archive()">Start Archive</button>
+
+<p id="status"></p>
+
+<script>
+function fetchCourses() {
+  const baseUrl = document.getElementById("baseUrl").value;
+  const token = document.getElementById("token").value;
+
+  google.script.run.withSuccessHandler(renderCourses)
+    .listCourses(baseUrl, token);
+}
+
+function renderCourses(courses) {
+  const container = document.getElementById("courses");
+  container.innerHTML = "";
+
+  courses.forEach(course => {
+    const div = document.createElement("div");
+    div.innerHTML =
+      '<input type="checkbox" value="' + course.id + '" data-name="' + course.name + '">' +
+      course.name;
+    container.appendChild(div);
+  });
+}
+
+function archive() {
+  const baseUrl = document.getElementById("baseUrl").value;
+  const token = document.getElementById("token").value;
+  const folderName = document.getElementById("folderName").value;
+
+  const checked = document.querySelectorAll("input[type=checkbox]:checked");
+
+  const selectedCourses = Array.from(checked).map(cb => ({
+    id: cb.value,
+    name: cb.getAttribute("data-name")
+  }));
+
+  google.script.run.withSuccessHandler(msg => {
+    document.getElementById("status").innerText = msg;
+  }).startArchive({
+    baseUrl,
+    token,
+    folderName,
+    selectedCourses
+  });
+}
+</script>
+
+</body>
+</html>
